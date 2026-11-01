@@ -1,0 +1,33 @@
+name: Nectar fork validation
+on:
+  workflow_dispatch:
+    inputs:
+      test_ref:
+        description: Branch or commit to validate
+        required: true
+        default: main
+permissions:
+  contents: read
+jobs:
+  frontend:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.test_ref }}
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - run: bunx tsc --noEmit
+      - run: bun run build
+  rust:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.test_ref }}
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri -> target
+      - run: cargo test --bin nectar
+        working-directory: src-tauri
